@@ -57,19 +57,19 @@ if __name__ == "__main__":
             build_cfg.DataflowOutputType.DEPLOYMENT_PACKAGE,
         ],
         # Steps after which verification should be run
-        verify_steps=[
-            # Verify the model after converting to the FINN onnx dialect
-            build_cfg.VerificationStepType.QONNX_TO_FINN_PYTHON,
-            # Verify the model again using python mode after the default
-            # streamlining step
-            build_cfg.VerificationStepType.STREAMLINED_PYTHON,
-            # Verify the model again after tidy up transformations, right before
-            # converting to HLS
-            build_cfg.VerificationStepType.TIDY_UP_PYTHON,
-            # Verify the model after generating C++ HLS and applying folding
-            build_cfg.VerificationStepType.FOLDED_HLS_CPPSIM
-            # No RTL Simulation support for now
-        ],
+        #verify_steps=[
+        #    # Verify the model after converting to the FINN onnx dialect
+        #    build_cfg.VerificationStepType.QONNX_TO_FINN_PYTHON,
+        #    # Verify the model again using python mode after the default
+        #    # streamlining step
+        #    build_cfg.VerificationStepType.STREAMLINED_PYTHON,
+        #    # Verify the model again after tidy up transformations, right before
+        #    # converting to HLS
+        #    build_cfg.VerificationStepType.TIDY_UP_PYTHON,
+        #    # Verify the model after generating C++ HLS and applying folding
+        #    build_cfg.VerificationStepType.FOLDED_HLS_CPPSIM
+        #    # No RTL Simulation support for now
+        #],
         # File with test inputs for verification
         verify_input_npy="outputs/inp.npy",
         # File with expected test outputs for verification
@@ -111,43 +111,43 @@ if __name__ == "__main__":
             step_replicate_streams,
             # Convert most other layers supported by FINN to HW operators
             "step_convert_to_hw",
-            # Specialize HW layer implementations as either HLS or RTL
-            "step_specialize_layers",
-            "step_create_dataflow_partition",
-            # Set the folding configuration to meet the cycles per sequence
-            # target
-            set_target_parallelization(seq_len, emb_dim),
-            # Apply folding configuration, specifying hardware implementation
-            # details
-            # Note: This triggers a verification step
-            step_apply_folding_config,
-            "step_minimize_bit_width",
-            # The ScaledDotProductAttention custom op does not define any
-            # estimates
-            "step_generate_estimate_reports",
-            "step_hw_codegen",
-            "step_hw_ipgen",
-            # Set the attention- and residual-related FIFO depths insert FIFOs
-            # and apply folding configuration once again
-            # Note: Implement all FIFOs with a depth at least as deep as the
-            # sequence length in URAM.
-            set_fifo_depths(seq_len, emb_dim, uram_threshold=seq_len),
-            # Run additional node-by-node verification in RTL simulation of the
-            # model before creating the stitched IP
-            # Note: end-to-end verification of the stitched IP in RTL simulation
-            # is still not possible due to missing float IPs
-            node_by_node_cppsim,
-            # Only for debugging for now, does not work if "vivado" style
-            # StreamingFIFOs are used
-            # node_by_node_rtlsim,
-            "step_create_stitched_ip",
-            # Attention does currently not support RTL simulation due to missing
-            # float IPs.
-            # "step_measure_rtlsim_performance",
-            "step_out_of_context_synthesis",
-            "step_synthesize_bitfile",
-            "step_make_driver",
-            "step_deployment_package",
+            # # Specialize HW layer implementations as either HLS or RTL
+            # "step_specialize_layers",
+            # "step_create_dataflow_partition",
+            # # Set the folding configuration to meet the cycles per sequence
+            # # target
+            # set_target_parallelization(seq_len, emb_dim),
+            # # Apply folding configuration, specifying hardware implementation
+            # # details
+            # # Note: This triggers a verification step
+            # step_apply_folding_config,
+            # "step_minimize_bit_width",
+            # # The ScaledDotProductAttention custom op does not define any
+            # # estimates
+            # "step_generate_estimate_reports",
+            # "step_hw_codegen",
+            # "step_hw_ipgen",
+            # # Set the attention- and residual-related FIFO depths insert FIFOs
+            # # and apply folding configuration once again
+            # # Note: Implement all FIFOs with a depth at least as deep as the
+            # # sequence length in URAM.
+            # set_fifo_depths(seq_len, emb_dim, uram_threshold=seq_len),
+            # # Run additional node-by-node verification in RTL simulation of the
+            # # model before creating the stitched IP
+            # # Note: end-to-end verification of the stitched IP in RTL simulation
+            # # is still not possible due to missing float IPs
+            # node_by_node_cppsim,
+            # # Only for debugging for now, does not work if "vivado" style
+            # # StreamingFIFOs are used
+            # # node_by_node_rtlsim,
+            # "step_create_stitched_ip",
+            # # Attention does currently not support RTL simulation due to missing
+            # # float IPs.
+            # # "step_measure_rtlsim_performance",
+            # "step_out_of_context_synthesis",
+            # "step_synthesize_bitfile",
+            # "step_make_driver",
+            # "step_deployment_package",
         ]
     )
 

@@ -564,7 +564,14 @@ class DummyTransformer(torch.nn.Module):
             mask="none",
             # Type of positional encoding to use at the input
             #   Options are: none, sinusoidal, binary, learned
-            positional_encoding="none"
+            positional_encoding="none",
+            # NICCHANGE:
+            # Share the SDPA threshold quantizers across all transformer
+            # layers. When True, the softmax output and output projection
+            # input quantizers are created once in the first block and
+            # reused by all subsequent blocks so they calibrate jointly and
+            # produce identical thresholds after export.
+            shared_quantizers=False
     ):
         # Initialize the PyTorch Module superclass
         super().__init__()
@@ -589,6 +596,36 @@ class DummyTransformer(torch.nn.Module):
                 num_heads, emb_dim, mlp_dim, seq_len, bias, norm, mask, bits
             ) for _ in range(num_layers)
         ])
+
+        # NICCHANGE:
+        # Optionally share the SDPA threshold quantizers across all layers
+        # by replacing each block's quantizer submodules with those of the
+        # first block. During calibration all layers then update the same
+        # parameters, producing identical thresholds.
+        if shared_quantizers:
+            # Use the first block as the reference
+            ref = self.encoder[0]
+            for block in self.encoder[1:]:
+                # Share the softmax output quantizer. Its scale feeds
+                # into the A·V matmul and gets folded into
+                # thresholds_a_softmax during streamlining.
+                block.sdp.attn_output_weights_quant = \
+                    ref.sdp.attn_output_weights_quant
+                # Share the A·V matmul output quantizer. This directly
+                # becomes thresholds_av_matmul in the SDPA custom op.
+                block.sdp.out_proj.input_quant = \
+                    ref.sdp.out_proj.input_quant
+                # Share the V activation quantizer. Its output scale
+                # feeds into the A·V matmul and gets folded into
+                # thresholds_av_matmul during streamlining.
+                block.sdp.v_quant = ref.sdp.v_quant
+                # Share the V projection bias quantizer so its scale does
+                # not introduce per-layer differences.
+                block.sdp.v_proj.bias_quant = ref.sdp.v_proj.bias_quant
+                # Share the input quantizer to the attention block. Its
+                # scale feeds into the V projection and propagates through
+                # to the A·V thresholds during streamlining.
+                block.sdp_input_quant = ref.sdp_input_quant
 
     # Model forward pass taking an input sequence and returning a single set of
     # class probabilities

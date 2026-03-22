@@ -9,7 +9,10 @@ import yaml
 from qonnx.core.modelwrapper import ModelWrapper
 # Range information structure for seeding the range analysis for converting
 # quantized activations to MultiThreshold
-from qonnx.util.range_analysis import RangeInfo
+try:
+    from qonnx.util.range_analysis import RangeInfo
+except ImportError:
+    RangeInfo = None
 
 # QONNX graph transformations for renaming and cleaning up
 from qonnx.transformation.general import (
@@ -138,7 +141,10 @@ from finn.transformation.fpgadataflow.set_exec_mode import SetExecMode
 from finn.transformation.fpgadataflow.prepare_rtlsim import PrepareRTLSim
 
 # Execute onnx model graphs from the dataflow parent for verification
-from finn.util.test import execute_parent
+try:
+    from finn.util.test import execute_parent
+except ModuleNotFoundError:
+    from finn.util.execution import execute_parent
 
 # Transformation for exhaustively composing transformations
 from qonnx.transformation.composed import ComposedTransformation

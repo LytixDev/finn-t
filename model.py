@@ -626,6 +626,15 @@ class DummyTransformer(torch.nn.Module):
                 # scale feeds into the V projection and propagates through
                 # to the A·V thresholds during streamlining.
                 block.sdp_input_quant = ref.sdp_input_quant
+                # Share the Q and K post-projection quantizers.
+                # Their scales multiply to form DequantSoftmax (the
+                # dequantization factor before softmax). Without sharing,
+                # each layer calibrates independently and produces a
+                # different DequantSoftmax value, which cannot vary
+                # per-iteration inside a FINNLoop.
+                block.sdp.q_scaled_quant = ref.sdp.q_scaled_quant
+                block.sdp.k_transposed_quant = \
+                    ref.sdp.k_transposed_quant
 
     # Model forward pass taking an input sequence and returning a single set of
     # class probabilities

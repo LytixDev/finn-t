@@ -1,0 +1,17 @@
+--- a/finn-plus/src/finn/transformation/fpgadataflow/attention_heads.py
++++ b/finn-plus/src/finn/transformation/fpgadataflow/attention_heads.py
+@@ -766,6 +766,13 @@
+                 for i in range(heads):
+                     # Start by making a full copy of the original node
+                     attention = copy.deepcopy(node)
++                    # NICCHANGE: Each replica handles exactly one head
++                    heads_attr = get_by_name(attention.attribute, "Heads")
++                    if heads_attr is not None:
++                        heads_attr.i = 1
++                    else:
++                        attention.attribute.append(
++                            oh.make_attribute("Heads", 1)
++                        )
+                     # Get the original shape of each input to remove the head
+                     # number
+                     _, seq, dim = model.get_tensor_shape(attention.input[0])
